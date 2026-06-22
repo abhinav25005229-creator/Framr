@@ -48,34 +48,40 @@ function Profile() {
     fetchProfile()
   }, [username])
 
-  const handleFollow = async () => {
-    if (!user) return
+const handleDelete = async (postId) => {
+  const confirmed = window.confirm(
+    'Are you sure you want to delete this post?'
+  );
 
-    const token = localStorage.getItem('token')
+  if (!confirmed) return;
 
-    try {
-      const res  = await fetch(
-        `https://lumiere-u53g.onrender.com/api/users/${profile.id}/follow`,
-        {
-          method:  'POST',
-          headers: { Authorization: `Bearer ${token}` }
+  const token = localStorage.getItem('token');
+
+  try {
+    const res = await fetch(
+      `https://lumiere-u53g.onrender.com/api/posts/${postId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-      )
-      const data = await res.json()
-
-      if (data.success) {
-        setIsFollowing(data.following)
-        setProfile(prev => ({
-          ...prev,
-          followers: data.following
-            ? prev.followers + 1
-            : prev.followers - 1
-        }))
       }
-    } catch (err) {
-      console.error('Follow failed:', err)
+    );
+
+    const data = await res.json();
+
+    if (data.success) {
+      setPosts(prev =>
+        prev.filter(post => post._id !== postId)
+      );
+    } else {
+      alert(data.message);
     }
+  } catch (err) {
+    console.error('Delete failed:', err);
+    alert('Failed to delete post');
   }
+};
 
   if (loading) return (
     <div className="profile-loading">✦</div>
@@ -179,6 +185,14 @@ function Profile() {
         <div className="profile-grid">
           {posts.map(post => (
             <div key={post._id} className="profile-post">
+            {isOwnProfile && (
+                  <button
+                    className="delete-post-btn"
+                    onClick={() => handleDelete(post._id)}
+                  >
+                    Delete
+                  </button>
+                )}
 
               {/* Private badge */}
               {!post.isPublic && (
