@@ -47,7 +47,35 @@ function Profile() {
 
     fetchProfile()
   }, [username])
+const handleFollow = async () => {
+  if (!user) return
 
+  const token = localStorage.getItem('token')
+
+  try {
+    const res = await fetch(
+      `https://lumiere-u53g.onrender.com/api/users/${profile.id}/follow`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    )
+
+    const data = await res.json()
+
+    if (data.success) {
+      setIsFollowing(data.following)
+      setProfile(prev => ({
+        ...prev,
+        followers: data.following
+          ? prev.followers + 1
+          : prev.followers - 1
+      }))
+    }
+  } catch (err) {
+    console.error('Follow failed:', err)
+  }
+}
 const handleDelete = async (postId) => {
   const confirmed = window.confirm(
     'Are you sure you want to delete this post?'
@@ -69,14 +97,22 @@ const handleDelete = async (postId) => {
     );
 
     const data = await res.json();
+if (data.success) {
+  setPosts(prev =>
+    prev.filter(post => post._id !== postId)
+  );
 
-    if (data.success) {
-      setPosts(prev =>
-        prev.filter(post => post._id !== postId)
-      );
-    } else {
-      alert(data.message);
-    }
+  setProfile(prev =>
+    prev
+      ? {
+          ...prev,
+          postCount: Math.max(0, prev.postCount - 1)
+        }
+      : prev
+  );
+} else {
+  alert(data.message);
+}
   } catch (err) {
     console.error('Delete failed:', err);
     alert('Failed to delete post');
